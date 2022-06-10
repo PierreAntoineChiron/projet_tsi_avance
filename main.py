@@ -39,17 +39,34 @@ def main():
             o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, Transformation3D())
             viewer.add_object(o)
 
+
+    m =Mesh.load_obj('Lakitu.obj') #Les lakitu x10 (copie intélligente)
+    m.normalize()
+    m.apply_matrix(pyrr.matrix44.create_from_scale([3, 3, 3, 1]))
+    texture = glutils.load_texture('Tex_0002_0.png')
+    vao = m.load_to_gpu()
+    for lak in range(10):
+        tr = Transformation3D()
+        o = Object3D(vao, m.get_nb_triangles(), program3d_id, texture, tr)
+        viewer.add_object(o)
+        tr.translation.y = -60
+        tr.translation.z = -10
+        tr.rotation_center.z = 0.2
+
     m =Mesh.load_obj('GreenShell.obj') 
     m.normalize()
     m.apply_matrix(pyrr.matrix44.create_from_scale([2, 2, 2, 1]))
-    tr = Transformation3D()
-    tr.translation.y = -np.amin(m.vertices, axis=0)[1]
-    tr.translation.z = -5
-    tr.rotation_center.z = 0.2
     texture = glutils.load_texture('ItmCommonGShell_auto.png')
-    o = Object3D(m.load_to_gpu(), m.get_nb_triangles(), program3d_id, texture, tr)
-    viewer.add_object(o)
+    vao = m.load_to_gpu()
+    for carap in range(15):
+        tr = Transformation3D()
+        o = Object3D(vao, m.get_nb_triangles(), program3d_id, texture, tr)
+        viewer.add_object(o)
+        tr.translation.y = -np.amin(m.vertices, axis=0)[1]
+        tr.translation.z = -15
+        tr.rotation_center.z = 0.2
 
+    
     viewer.run()
 
 

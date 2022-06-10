@@ -5,6 +5,7 @@ import glfw
 import pyrr
 import numpy as np
 from cpe3d import Object3D
+import random
 
 
 var_saut = 0
@@ -37,6 +38,9 @@ class ViewerGL:
         self.lock = True
         self.objs = []
         self.touch = {}
+        self.lakitu_init = 10
+        self.carap_dx = []
+        self.carap_dz = []
 
     def run(self):
         # boucle d'affichage
@@ -46,8 +50,14 @@ class ViewerGL:
 
             self.update_key()
 
+           # if self.lakitu_init == 0:
+            #    self.objs[10].transformation.translation += \
+           #         pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[10].transformation.rotation_euler), pyrr.Vector3([0, -60,-5]))
+           #     self.lakitu_init = 1
+
             if self.unalive !=2:
                 self.gravity()
+                self.mvt_carapace()
 
                 if self.unalive == 0:
                     self.collision()
@@ -115,14 +125,14 @@ class ViewerGL:
         if self.unalive !=2: 
             if glfw.KEY_UP in self.touch and self.touch[glfw.KEY_UP] > 0:
                 self.objs[0].transformation.translation += \
-                    pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, 0.11]))
+                    pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, 0.3]))
             if glfw.KEY_DOWN in self.touch and self.touch[glfw.KEY_DOWN] > 0:
                 self.objs[0].transformation.translation -= \
-                    pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, 0.11]))
+                    pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, 0.3]))
             if glfw.KEY_LEFT in self.touch and self.touch[glfw.KEY_LEFT] > 0:
-                self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] -= 0.1
+                self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] -= 0.05
             if glfw.KEY_RIGHT in self.touch and self.touch[glfw.KEY_RIGHT] > 0:
-                self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] += 0.1
+                self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] += 0.05
 
             if glfw.KEY_I in self.touch and self.touch[glfw.KEY_I] > 0:
                 self.cam.transformation.rotation_euler[pyrr.euler.index().roll] -= 0.1
@@ -138,7 +148,7 @@ class ViewerGL:
                 posy = self.objs[0].transformation.translation.y
                 posy_sol = self.objs[1].transformation.translation.y
                 if var_saut == 0:
-                    var_saut = 5
+                    var_saut = 500
 
         if glfw.KEY_Y in self.touch :
             self.cam.transformation.rotation_euler = self.objs[0].transformation.rotation_euler.copy() 
@@ -154,12 +164,12 @@ class ViewerGL:
 
         if var_saut !=0:
             dt = current_time - last_time
-            acceleration = var_saut - 150
+            acceleration = var_saut - 100
             vitesse = 5 + acceleration * dt
             pos = vitesse * dt
             self.objs[0].transformation.translation += \
                 pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, pos, 0]))
-            var_saut -=1
+            var_saut -= 10
             if var_saut == 0 :
                 var_saut = -1
 
@@ -167,8 +177,6 @@ class ViewerGL:
         posx = self.objs[0].transformation.translation.x
         posy = self.objs[0].transformation.translation.y
         posz = self.objs[0].transformation.translation.z
-
-        print(posx,posy,posz,self.cam.transformation.rotation_euler[pyrr.euler.index().yaw])
 
         if (posx >= 75 or posx <= -75 or posz >= 75 or posz <= -75 or self.unalive == 1) and (self.unalive != 2):
             self.unalive = 1
@@ -182,36 +190,69 @@ class ViewerGL:
         posy = self.objs[0].transformation.translation.y
         posz = self.objs[0].transformation.translation.z
 
-        print(posx,posz)
+        posxlakitu = self.objs[self.lakitu_init].transformation.translation.x
+        posylakitu = self.objs[self.lakitu_init].transformation.translation.y
+        poszlakitu = self.objs[self.lakitu_init].transformation.translation.z
         
+        print(round(posxlakitu,3),round(posx,3),round(posylakitu,3),round(posy,3),round(poszlakitu,3),round(posz,3))
+
+        if posylakitu <= -59:
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([posx, 64 + posy, 8 + posz]))
+
         if posy < 0.02 +1.905898094177246:
             self.objs[0].transformation.translation += \
                 pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, +0.1, 0]))
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([0, +0.1, 0]))
 
         elif posx < -25:
             if self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] != np.pi/2:
                 self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi/2
+                self.objs[self.lakitu_init].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi/2
+
             self.objs[0].transformation.translation += \
                 pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, -0.5]))
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([0, 0, -0.5]))
+
         elif posx > 25:
             if self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] != np.pi/2:
                 self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi/2
+                self.objs[self.lakitu_init].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi/2
+
             self.objs[0].transformation.translation += \
                 pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, 0.5]))
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([0, 0, 0.5]))
         
         elif posz < -25:
             if self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] != np.pi:
                 self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi
+                self.objs[self.lakitu_init].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi
+
             self.objs[0].transformation.translation += \
                 pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, -0.5]))
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([0, 0, -0.5]))
+
         elif posz > 25:
             if self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] != np.pi:
                 self.objs[0].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi
+                self.objs[self.lakitu_init].transformation.rotation_euler[pyrr.euler.index().yaw] = np.pi
+
             self.objs[0].transformation.translation += \
                 pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0, +0.5]))
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([0, 0, +0.5]))
         
         else:
             self.unalive = 0
+
+            self.objs[self.lakitu_init].transformation.translation += \
+                pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[self.lakitu_init].transformation.rotation_euler), pyrr.Vector3([1000,1000,1000]))
+            self.lakitu_init +=1
+
 
     def collision(self):
         global var_saut
@@ -227,4 +268,20 @@ class ViewerGL:
                     pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[0].transformation.rotation_euler), pyrr.Vector3([0, 0.024, 0]))
 
                 var_saut = 0
-        return 'none'
+
+    def mvt_carapace(self):
+        for k in range(20,len(self.objs)):
+            if len(self.carap_dx) < len(self.objs):
+                self.carap_dx.append(0.2 + 0.5*random.random())
+            if len(self.carap_dz) < len(self.objs):
+                self.carap_dz.append(0.2 + 0.5*random.random())
+
+            posx_carap = self.objs[k].transformation.translation.x
+            posz_carap = self.objs[k].transformation.translation.z
+
+            if posx_carap > 75 or posx_carap < -75:
+                self.carap_dx[k-20] = -self.carap_dx[k-20]
+            if posz_carap > 75 or posz_carap < -75:
+                self.carap_dz[k-20] = -self.carap_dz[k-20]
+            self.objs[k].transformation.translation += \
+                        pyrr.matrix33.apply_to_vector(pyrr.matrix33.create_from_eulers(self.objs[k].transformation.rotation_euler), pyrr.Vector3([self.carap_dx[k-20], 0, self.carap_dz[k-20]]))
